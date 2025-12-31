@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car Insurance Group Checker</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+
+        .subtitle {
+            color: #666;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            color: #555;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 18px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        input[type="text"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
+        }
+
+        input[type="text"]::placeholder {
+            text-transform: none;
+            letter-spacing: normal;
+            color: #aaa;
+        }
+
+        button {
+            width: 100%;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .result {
+            margin-top: 30px;
+            padding: 20px;
+            border-radius: 8px;
+            display: none;
+        }
+
+        .result.success {
+            display: block;
+            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+            border: 1px solid #28a745;
+        }
+
+        .result.error {
+            display: block;
+            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+            border: 1px solid #dc3545;
+        }
+
+        .result-title {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .result-group {
+            font-size: 36px;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .result-reg {
+            font-size: 14px;
+            color: #666;
+            font-family: monospace;
+            background: rgba(0, 0, 0, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+            display: inline-block;
+        }
+
+        .result.error .result-title {
+            color: #721c24;
+        }
+
+        .result.error .error-message {
+            color: #721c24;
+            font-size: 14px;
+        }
+
+        .json-output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .json-output h3 {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .json-output pre {
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 12px;
+            color: #333;
+            white-space: pre-wrap;
+            word-break: break-all;
+            margin: 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 15px;
+            overflow: hidden;
+            display: none;
+        }
+
+        .progress-bar.active {
+            display: block;
+        }
+
+        .progress-bar-inner {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
+            background-size: 200% 100%;
+            animation: progress 1.5s ease-in-out infinite;
+            width: 100%;
+        }
+
+        @keyframes progress {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .status-text {
+            text-align: center;
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .status-text.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚗 Car Insurance Group Checker</h1>
+        <p class="subtitle">Enter your vehicle registration to find its insurance group</p>
+        
+        <div class="input-group">
+            <label for="registration">Registration Number</label>
+            <input 
+                type="text" 
+                id="registration" 
+                placeholder="e.g. WJ60CHG"
+                maxlength="8"
+                autocomplete="off"
+            >
+        </div>
+        
+        <button id="extractBtn" onclick="lookupInsuranceGroup()"><span id="btnText">Extract Insurance Group</span>
+            <div class="spinner" id="spinner" style="display: none;"></div>
+        </button>
+        
+        <div class="progress-bar" id="progressBar">
+            <div class="progress-bar-inner"></div>
+        </div>
+        
+        <p class="status-text" id="statusText">Searching for vehicle information...</p>
+        
+        <div class="result" id="result">
+            <div class="result-title">Your car insurance group</div>
+            <div class="result-group" id="resultGroup"></div>
+            <div class="result-reg" id="resultReg"></div>
+        </div>
+        
+        <div class="json-output" id="jsonOutput" style="display: none;">
+            <h3>JSON Response</h3>
+            <pre id="jsonContent"></pre>
+        </div>
+    </div>
+
+    <script>
+        const registrationInput = document.getElementById('registration');
+        const extractBtn = document.getElementById('extractBtn');
+        const btnText = document.getElementById('btnText');
+        const spinner = document.getElementById('spinner');
+        const progressBar = document.getElementById('progressBar');
+        const statusText = document.getElementById('statusText');
+        const result = document.getElementById('result');
+        const resultGroup = document.getElementById('resultGroup');
+        const resultReg = document.getElementById('resultReg');
+        const jsonOutput = document.getElementById('jsonOutput');
+        const jsonContent = document.getElementById('jsonContent');
+
+        // Allow Enter key to submit
+        registrationInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                lookupInsuranceGroup();
+            }
+        });
+
+        // Auto-format input to uppercase
+        registrationInput.addEventListener('input', (e) => {
+            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+        });
+
+        async function lookupInsuranceGroup() {
+            const registration = registrationInput.value.trim();
+            
+            if (!registration) {
+                showError('Please enter a registration number');
+                return;
+            }
+
+            if (registration.length < 2 || registration.length > 8) {
+                showError('Invalid registration number format');
+                return;
+            }
+
+            // Show loading state
+            setLoading(true);
+            hideResult();
+
+            try {
+                const response = await fetch('/lookup', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ registration })
+                });
+
+                const data = await response.json();
+                
+                // Show JSON response
+                jsonOutput.style.display = 'block';
+                jsonContent.textContent = JSON.stringify(data, null, 2);
+
+                if (data.success) {
+                    showSuccess(data);
+                } else {
+                    showError(data.error || 'Failed to lookup insurance group');
+                }
+            } catch (error) {
+                showError('Network error: ' + error.message);
+                jsonOutput.style.display = 'block';
+                jsonContent.textContent = JSON.stringify({ error: error.message }, null, 2);
+            } finally {
+                setLoading(false);
+            }
+        }
+
+        function setLoading(loading) {
+            extractBtn.disabled = loading;
+            btnText.textContent = loading ? 'Extracting...' : 'Extract Insurance Group';
+            spinner.style.display = loading ? 'block' : 'none';
+            progressBar.classList.toggle('active', loading);statusText.classList.toggle('active', loading);
+        }
+
+        function hideResult() {
+            result.className = 'result';
+            result.style.display = 'none';
+        }
+
+        function showSuccess(data) {
+            result.className = 'result success';
+            result.style.display = 'block';
+            resultGroup.textContent = data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`;
+            resultReg.textContent = data.registration;
+        }
+
+        function showError(message) {
+            result.className = 'result error';
+            result.style.display = 'block';
+            result.innerHTML = `
+                <div class="result-title">Error</div>
+                <div class="error-message">${message}</div>
+            `;
+        }
+    </script>
+</body>
+</html>
