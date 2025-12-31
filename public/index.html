@@ -27,7 +27,6 @@
             max-width: 900px;
             background: #1a1a1a;
             border-radius: 8px;
-            box-shadow: 0 0 50px rgba(0, 255, 0, 0.2);
             overflow: hidden;
         }
 
@@ -79,12 +78,6 @@
             line-height: 1.5;
         }
 
-        .ascii-art {
-            color: #00ff00;
-            font-size: 10px;
-            line-height: 1.2;
-        }
-
         @media (max-width: 768px) {
             .terminal-wrapper {
                 max-width: 100%;
@@ -93,10 +86,6 @@
             #terminal {
                 min-height: 400px;
                 padding: 15px;
-            }
-            
-            .ascii-art {
-                font-size: 8px;
             }
         }
     </style>
@@ -115,227 +104,87 @@
     <script type="module">
         import Terminal from '/node_modules/vanilla-terminal/index.js';
 
-        const asciiCar = `
-    ______
-   /|_||_\\'._
-  (   _    _ _\\
- ='-(_)--(_)-'
-        `;
-
         const welcomeMessage = `
-${asciiCar}
 ╔═══════════════════════════════════════════════════════════╗
 ║     CAR INSURANCE GROUP CHECKER TERMINAL v1.0.0          ║
-║                                                           ║
-║  Type 'help' for available commands                      ║
 ╚═══════════════════════════════════════════════════════════╝
 
-Welcome to the Insurance Group Terminal!
+Enter vehicle registration to find insurance group
 `;
 
-        let currentRegistration = '';
+        let isProcessing = false;
 
         const terminal = new Terminal({
             welcome: welcomeMessage,
-            prompt: 'insurance-terminal$',
+            prompt: 'Registration:',
             separator: ' ',
-            commands: {
-                help: () => {
-                    return `
-Available Commands:
-─────────────────────────────────────────────────────────
+            handleCommand: async (input) => {
+                if (isProcessing) {
+                    return 'Please wait for the current request to complete...';
+                }
 
-  check <REG>      Check insurance group for registration
-                   Example: check WJ60CHG
+                const reg = input.trim().toUpperCase().replace(/\s+/g, '');
+                
+                if (!reg) {
+                    return 'Please enter a registration number';
+                }
 
-  set <REG>        Set current registration number
-                   Example: set AB12CDE
+                if (reg.length < 2 || reg.length > 8) {
+                    return 'Invalid registration format (2-8 characters required)';
+                }
 
-  show             Display current registration
+                isProcessing = true;
+                terminal.output('Searching for vehicle information...');
+                terminal.output('Processing...\n');
 
-  lookup           Lookup insurance group for current registration
+                try {
+                    const response = await fetch('/lookup', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ registration: reg })
+                    });
 
-  clear            Clear the terminal screen
+                    const data = await response.json();
 
-  about            Show information about this terminal
-
-  help             Show this help message
-
-─────────────────────────────────────────────────────────
-Current Registration: ${currentRegistration || 'None set'}
-`;
-                },
-
-                check: async (args) => {
-                    const reg = args.join('').toUpperCase().replace(/\s+/g, '');
-                    
-                    if (!reg) {
-                        return 'Error: Please provide a registration number\nUsage: check <registration>';
-                    }
-
-                    if (reg.length < 2 || reg.length > 8) {
-                        return 'Error: Invalid registration format (2-8 characters required)';
-                    }
-
-                    terminal.output('Connecting to insurance database...');
-                    terminal.output(`Searching for vehicle: ${reg}`);
-                    terminal.output('Processing...\n');
-
-                    try {
-                        const response = await fetch('/lookup', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ registration: reg })
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            currentRegistration = reg;
-                            return `
+                    if (data.success) {
+                        const result = `
 ╔═══════════════════════════════════════════════════════════╗
-║                    LOOKUP SUCCESSFUL                      ║
+║                    VEHICLE INFORMATION                    ║
 ╚═══════════════════════════════════════════════════════════╝
 
 Registration:      ${data.registration}
 Insurance Group:   ${data.insuranceGroup}/${data.maxGroup}
-Display:           ${data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`}
 
-Raw Data:
-─────────────────────────────────────────────────────────
 ${JSON.stringify(data, null, 2)}
+
 ─────────────────────────────────────────────────────────
+Enter another registration number or press Ctrl+C to exit
 `;
-                        } else {
-                            return `
-╔═══════════════════════════════════════════════════════════╗
-║                      LOOKUP FAILED                        ║
-╚═══════════════════════════════════════════════════════════╝
+                        isProcessing = false;
+                        return result;
+                    } else {
+                        const errorResult = `
+Error: ${data.error || 'Failed to lookup insurance group'}
 
-Error: ${data.error || 'Unknown error occurred'}
-
-Response:
 ${JSON.stringify(data, null, 2)}
-`;
-                        }
-                    } catch (error) {
-                        return `
-╔═══════════════════════════════════════════════════════════╗
-║                    CONNECTION ERROR                       ║
-╚═══════════════════════════════════════════════════════════╝
 
+─────────────────────────────────────────────────────────
+Enter another registration number or press Ctrl+C to exit
+`;
+                        isProcessing = false;
+                        return errorResult;
+                    }
+                } catch (error) {
+                    const errorResult = `
 Error: ${error.message}
+
 Please check your network connection and try again.
-`;
-                    }
-                },
 
-                set: (args) => {
-                    const reg = args.join('').toUpperCase().replace(/\s+/g, '');
-                    
-                    if (!reg) {
-                        return 'Error: Please provide a registration number\nUsage: set <registration>';
-                    }
-
-                    if (reg.length < 2 || reg.length > 8) {
-                        return 'Error: Invalid registration format (2-8 characters required)';
-                    }
-
-                    currentRegistration = reg;
-                    return `Registration set to: ${reg}\nUse 'lookup' to check insurance group`;
-                },
-
-                show: () => {
-                    if (!currentRegistration) {
-                        return 'No registration number set\nUse: set <registration>';
-                    }
-                    return `Current Registration: ${currentRegistration}`;
-                },
-
-                lookup: async () => {
-                    if (!currentRegistration) {
-                        return 'Error: No registration set\nUse: set <registration> or check <registration>';
-                    }
-
-                    terminal.output('Connecting to insurance database...');
-                    terminal.output(`Searching for vehicle: ${currentRegistration}`);
-                    terminal.output('Processing...\n');
-
-                    try {
-                        const response = await fetch('/lookup', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ registration: currentRegistration })
-                        });
-
-                        const data = await response.json();
-
-                        if (data.success) {
-                            return `
-╔═══════════════════════════════════════════════════════════╗
-║                    LOOKUP SUCCESSFUL                      ║
-╚═══════════════════════════════════════════════════════════╝
-
-Registration:      ${data.registration}
-Insurance Group:   ${data.insuranceGroup}/${data.maxGroup}
-Display:           ${data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`}
-
-Raw Data:
 ─────────────────────────────────────────────────────────
-${JSON.stringify(data, null, 2)}
-─────────────────────────────────────────────────────────
+Enter another registration number or press Ctrl+C to exit
 `;
-                        } else {
-                            return `
-╔═══════════════════════════════════════════════════════════╗
-║                      LOOKUP FAILED                        ║
-╚═══════════════════════════════════════════════════════════╝
-
-Error: ${data.error || 'Unknown error occurred'}
-
-Response:
-${JSON.stringify(data, null, 2)}
-`;
-                        }
-                    } catch (error) {
-                        return `
-╔═══════════════════════════════════════════════════════════╗
-║                    CONNECTION ERROR                       ║
-╚═══════════════════════════════════════════════════════════╝
-
-Error: ${error.message}
-Please check your network connection and try again.
-`;
-                    }
-                },
-
-                clear: () => {
-                    terminal.clear();
-                    return welcomeMessage;
-                },
-
-                about: () => {
-                    return `
-╔═══════════════════════════════════════════════════════════╗
-║          CAR INSURANCE GROUP CHECKER TERMINAL            ║
-╚═══════════════════════════════════════════════════════════╝
-
-Version:           1.0.0
-Terminal:          vanilla-terminal
-Backend:           Express.js + Python Crawler
-Database:          Live Insurance Data
-
-Description:
-This terminal application allows you to check car insurance
-groups by entering vehicle registration numbers. The system
-queries live data and returns insurance group information.
-
-Commands:          Type 'help' for full command list
-Repository:        insurance-scraper
-License:           ISC
-
-${asciiCar}
-`;
+                    isProcessing = false;
+                    return errorResult;
                 }
             }
         });
