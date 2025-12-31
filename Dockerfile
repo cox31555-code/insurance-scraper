@@ -152,9 +152,9 @@ RUN pip3 install --break-system-packages \
     playwright-stealth \
     python-dotenv
 
-# Install Playwright browsers with all dependencies
-RUN python3 -m playwright install chromium
-RUN python3 -m playwright install-deps chromium
+# Install Playwright Firefox browser with all dependencies
+RUN python3 -m playwright install firefox
+RUN python3 -m playwright install-deps firefox
 
 # Copy application files
 COPY server.js ./
@@ -180,8 +180,6 @@ ENV PLAYWRIGHT_BROWSERS_PATH=/root/.cache/ms-playwright
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=0
 # Display settings for headless browser
 ENV DISPLAY=:99
-# Disable Chrome sandbox (required in Docker)
-ENV CHROME_NO_SANDBOX=1
 # Additional browser settings
 ENV FONTCONFIG_PATH=/etc/fonts
 ENV XDG_CONFIG_HOME=/root/.config

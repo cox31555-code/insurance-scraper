@@ -6,77 +6,44 @@ import re
 import random
 from dotenv import load_dotenv
 from playwright.async_api import async_playwright
-from playwright_stealth import Stealth
 
 # Load environment variables from .env file
 load_dotenv()
 
 TARGET_URL = "https://www.moneysupermarket.com/car-insurance/car-insurance-group-checker-tool/"
 
+# Firefox-compatible user agents only
 USER_AGENTS = [
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 13_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 12_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36", "platform": "Linux x86_64", "os": "Linux"},
-    {"ua": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36", "platform": "Linux x86_64", "os": "Linux"},
     {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0", "platform": "Win32", "os": "Windows"},
     {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:120.0) Gecko/20100101 Firefox/120.0", "platform": "Win32", "os": "Windows"},
     {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0", "platform": "Win32", "os": "Windows"},
     {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:119.0) Gecko/20100101 Firefox/119.0", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:118.0) Gecko/20100101 Firefox/118.0", "platform": "Win32", "os": "Windows"},
+    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0", "platform": "Win32", "os": "Windows"},
     {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0", "platform": "MacIntel", "os": "macOS"},
     {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:120.0) Gecko/20100101 Firefox/120.0", "platform": "MacIntel", "os": "macOS"},
     {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14.0; rv:121.0) Gecko/20100101 Firefox/121.0", "platform": "MacIntel", "os": "macOS"},
     {"ua": "Mozilla/5.0 (X11; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0", "platform": "Linux x86_64", "os": "Linux"},
     {"ua": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:120.0) Gecko/20100101 Firefox/120.0", "platform": "Linux x86_64", "os": "Linux"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36 Edg/119.0.0.0", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36 Edg/121.0.0.0", "platform": "Win32", "os": "Windows"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15", "platform": "MacIntel", "os": "macOS"},
-    {"ua": "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.1 Safari/605.1.15", "platform": "MacIntel", "os": "macOS"},
+    {"ua": "Mozilla/5.0 (X11; Linux x86_64; rv:122.0) Gecko/20100101 Firefox/122.0", "platform": "Linux x86_64", "os": "Linux"},
 ]
 
 SCREEN_CONFIGS = [
-    {"width": 1920, "height": 1080, "device_scale_factor": 1},
-    {"width": 1920, "height": 1080, "device_scale_factor": 1.25},
-    {"width": 1920, "height": 1080, "device_scale_factor": 1.5},
-    {"width": 1366, "height": 768, "device_scale_factor": 1},
-    {"width": 1536, "height": 864, "device_scale_factor": 1.25},
-    {"width": 1440, "height": 900, "device_scale_factor": 1},
-    {"width": 1680, "height": 1050, "device_scale_factor": 1},
-    {"width": 2560, "height": 1440, "device_scale_factor": 1},
-    {"width": 2560, "height": 1440, "device_scale_factor": 1.25},
-    {"width": 1280, "height": 720, "device_scale_factor": 1},
-    {"width": 1600, "height": 900, "device_scale_factor": 1},
-    {"width": 1280, "height": 800, "device_scale_factor": 1},
-    {"width": 1280, "height": 1024, "device_scale_factor": 1},
-    {"width": 1400, "height": 1050, "device_scale_factor": 1},
-    {"width": 1920, "height": 1200, "device_scale_factor": 1},
-    {"width": 2560, "height": 1600, "device_scale_factor": 1},
-    {"width": 3840, "height": 2160, "device_scale_factor": 2},
-    {"width": 1504, "height": 1003, "device_scale_factor": 2},
-    {"width": 1728, "height": 1117, "device_scale_factor": 2},
-    {"width": 1800, "height": 1169, "device_scale_factor": 2},
+    {"width": 1920, "height": 1080},
+    {"width": 1366, "height": 768},
+    {"width": 1536, "height": 864},
+    {"width": 1440, "height": 900},
+    {"width": 1680, "height": 1050},
+    {"width": 2560, "height": 1440},
+    {"width": 1280, "height": 720},
+    {"width": 1600, "height": 900},
+    {"width": 1280, "height": 800},
 ]
 
 LOCALE_CONFIGS = [
     {"locale": "en-GB", "timezone": "Europe/London"},
-    {"locale": "en-GB", "timezone": "Europe/London"},
-    {"locale": "en-US", "timezone": "Europe/London"},
 ]
 
-ACCEPT_LANGUAGES = ["en-GB,en;q=0.9", "en-GB,en-US;q=0.9,en;q=0.8", "en-GB,en;q=0.9,en-US;q=0.8"]
+ACCEPT_LANGUAGES = ["en-GB,en;q=0.9", "en-GB,en-US;q=0.9,en;q=0.8"]
 
 
 def generate_random_fingerprint():
@@ -84,36 +51,15 @@ def generate_random_fingerprint():
     screen = random.choice(SCREEN_CONFIGS)
     locale_config = random.choice(LOCALE_CONFIGS)
     accept_language = random.choice(ACCEPT_LANGUAGES)
-    platform = ua_config["platform"]
-    os_type = ua_config["os"]
-    if os_type == "macOS":
-        hardware_concurrency = random.choice([4, 8, 10, 12, 16, 20])
-        device_memory = random.choice([8, 16, 32, 64])
-        color_depth = 30
-        webgl_vendor = "Apple Inc."
-        webgl_renderer = random.choice(["Apple M1", "Apple M2", "Apple M3", "AMD Radeon Pro 5500M"])
-    elif os_type == "Linux":
-        hardware_concurrency = random.choice([2, 4, 6, 8, 12, 16, 24, 32])
-        device_memory = random.choice([4, 8, 16, 32, 64])
-        color_depth = 24
-        webgl_vendor = random.choice(["Intel", "NVIDIA Corporation", "AMD"])
-        webgl_renderer = random.choice(["Mesa Intel UHD Graphics", "NVIDIA GeForce GTX 1080", "AMD Radeon RX 580"])
-    else:
-        hardware_concurrency = random.choice([2, 4, 6, 8, 12, 16, 24])
-        device_memory = random.choice([4, 8, 16, 32])
-        color_depth = random.choice([24, 32])
-        webgl_vendor = random.choice(["Google Inc. (NVIDIA)", "Google Inc. (Intel)", "Google Inc. (AMD)"])
-        webgl_renderer = random.choice(["ANGLE (NVIDIA GeForce GTX 1660)", "ANGLE (Intel UHD Graphics 630)", "ANGLE (AMD Radeon RX 580)"])
     
     return {
-        "user_agent": ua_config["ua"], "platform": platform, "os_type": os_type,
+        "user_agent": ua_config["ua"],
+        "platform": ua_config["platform"],
+        "os_type": ua_config["os"],
         "viewport": {"width": screen["width"], "height": screen["height"]},
-        "device_scale_factor": screen["device_scale_factor"],
-        "locale": locale_config["locale"], "timezone": locale_config["timezone"],
-        "accept_language": accept_language, "hardware_concurrency": hardware_concurrency,
-        "device_memory": device_memory, "color_depth": color_depth,
-        "webgl_vendor": webgl_vendor, "webgl_renderer": webgl_renderer,
-    }
+        "locale": locale_config["locale"],
+        "timezone": locale_config["timezone"],
+        "accept_language": accept_language,}
 
 
 async def short_delay(min_ms=20, max_ms=100):
@@ -190,6 +136,50 @@ async def move_and_click(page, element):
         await element.click()
 
 
+def is_cloudflare_challenge(page_title: str, page_text: str) -> bool:
+    """Check if the page is a Cloudflare challenge page."""
+    title_lower = page_title.lower() if page_title else ""
+    text_lower = page_text.lower() if page_text else ""
+    
+    cloudflare_indicators = [
+        "just a moment",
+        "checking your browser",
+        "please wait",
+        "ddos protection",
+        "cloudflare",
+        "ray id",
+        "enable javascript",
+        "unusual activity",
+        "security check",
+        "attention required",
+    ]
+    
+    return any(indicator in title_lower or indicator in text_lower[:500] for indicator in cloudflare_indicators)
+
+
+async def verify_proxy_ip(page, debug_info: list) -> str:
+    """Verify the proxy is working by checking the IP address."""
+    try:
+        await page.goto("https://api.ipify.org?format=json", timeout=15000)
+        content = await page.content()
+        # Extract IP from JSON response
+        ip_match = re.search(r'"ip"\s*:\s*"([^"]+)"', content)
+        if ip_match:
+            ip = ip_match.group(1)
+            debug_info.append(f"Proxy IP verified: {ip}")
+            return ip
+        # Try plain text format
+        text = await page.inner_text('body')
+        if re.match(r'^\d+\.\d+\.\d+\.\d+$', text.strip()):
+            debug_info.append(f"Proxy IP verified: {text.strip()}")
+            return text.strip()
+        debug_info.append("Could not parse IP from response")
+        return ""
+    except Exception as e:
+        debug_info.append(f"IP verification failed: {str(e)[:50]}")
+        return ""
+
+
 async def lookup_insurance_group(registration: str):
     proxy_host = os.environ.get("PROXY_HOST", "")
     proxy_port = os.environ.get("PROXY_PORT", "")
@@ -204,7 +194,7 @@ async def lookup_insurance_group(registration: str):
             proxy_config["password"] = proxy_pass
     
     fingerprint = generate_random_fingerprint()
-    debug_info = [f"Fingerprint: {fingerprint['user_agent'][:50]}... | {fingerprint['os_type']}"]
+    debug_info = [f"Fingerprint: {fingerprint['user_agent'][:60]}... | {fingerprint['os_type']}"]
     if proxy_config:
         debug_info.append(f"Using proxy: {proxy_host}:{proxy_port}")
     else:
@@ -212,94 +202,68 @@ async def lookup_insurance_group(registration: str):
     
     try:
         async with async_playwright() as p:
-            # Apply stealth BEFORE launching browser
-            stealth = Stealth()
-            stealth.hook_playwright_context(p)
-            
+            # Use Firefox - better for bypassing bot detection on VPS
             browser_args = {
                 "headless": True,
-                "args": ["--disable-blink-features=AutomationControlled", "--disable-dev-shm-usage", "--no-sandbox",
-                         "--disable-setuid-sandbox", "--disable-infobars",
-                         f"--window-size={fingerprint['viewport']['width']},{fingerprint['viewport']['height']}"]
-            }
+                "firefox_user_prefs": {
+                    # Disable telemetry
+                    "toolkit.telemetry.enabled": False,
+                    "datareporting.healthreport.uploadEnabled": False,
+                    # Disable webdriver detection
+                    "dom.webdriver.enabled": False,
+                    # Performance settings
+                    "network.http.pipelining": True,
+                    "network.http.proxy.pipelining": True,
+                },}
             if proxy_config:
                 browser_args["proxy"] = proxy_config
             
-            browser = await p.chromium.launch(**browser_args)
+            browser = await p.firefox.launch(**browser_args)
             
             context = await browser.new_context(
-                viewport=fingerprint["viewport"], user_agent=fingerprint["user_agent"],
-                locale=fingerprint["locale"], timezone_id=fingerprint["timezone"],
-                device_scale_factor=fingerprint["device_scale_factor"],
-                color_scheme=random.choice(["light", "light", "dark"]),
+                viewport=fingerprint["viewport"],
+                user_agent=fingerprint["user_agent"],
+                locale=fingerprint["locale"],
+                timezone_id=fingerprint["timezone"],
+                color_scheme="light",
                 geolocation={"latitude": 51.5074 + random.uniform(-0.1, 0.1), "longitude": -0.1278 + random.uniform(-0.1, 0.1)},
                 permissions=["geolocation"],
                 extra_http_headers={
                     "Accept-Language": fingerprint["accept_language"],
                     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-                    "Accept-Encoding": "gzip, deflate, br", "Sec-Ch-Ua-Mobile": "?0",
-                    "Sec-Ch-Ua-Platform": f'"{fingerprint["platform"]}"',
-                    "Sec-Fetch-Dest": "document", "Sec-Fetch-Mode": "navigate",
-                    "Sec-Fetch-Site": "none", "Sec-Fetch-User": "?1", "Upgrade-Insecure-Requests": "1",
+                    "Accept-Encoding": "gzip, deflate, br",
                 },
             )
             
-            await context.add_init_script(f"""
-                Object.defineProperty(navigator, 'hardwareConcurrency', {{ get: () => {fingerprint['hardware_concurrency']} }});
-                Object.defineProperty(navigator, 'deviceMemory', {{ get: () => {fingerprint['device_memory']} }});
-                Object.defineProperty(navigator, 'platform', {{ get: () => '{fingerprint['platform']}' }});
-                Object.defineProperty(screen, 'colorDepth', {{ get: () => {fingerprint['color_depth']} }});
-                Object.defineProperty(screen, 'pixelDepth', {{ get: () => {fingerprint['color_depth']} }});
-                const getParameterProxyHandler = {{
-                    apply: function(target, thisArg, args) {{
-                        if (args[0] === 37445) return '{fingerprint['webgl_vendor']}';
-                        if (args[0] === 37446) return '{fingerprint['webgl_renderer']}';
-                        return Reflect.apply(target, thisArg, args);
-                    }}
-                }};
-                ['WebGLRenderingContext', 'WebGL2RenderingContext'].forEach(ctx => {{
-                    if (window[ctx]) {{
-                        const original = window[ctx].prototype.getParameter;
-                        window[ctx].prototype.getParameter = new Proxy(original, getParameterProxyHandler);
-                    }}
-                }});
-                const originalToDataURL = HTMLCanvasElement.prototype.toDataURL;
-                HTMLCanvasElement.prototype.toDataURL = function(type) {{
-                    if (type === 'image/png' && this.width > 16 && this.height > 16) {{
-                        const context = this.getContext('2d');
-                        if (context) {{
-                            const imageData = context.getImageData(0, 0, this.width, this.height);
-                            for (let i = 0; i < imageData.data.length; i += 4) {{
-                                imageData.data[i] = imageData.data[i] ^ (Math.random() > 0.99 ? 1 : 0);
-                            }}
-                            context.putImageData(imageData, 0, 0);
-                        }}
-                    }}
-                    return originalToDataURL.apply(this, arguments);
-                }};
-            """)
-            
             page = await context.new_page()
-            # Listen for console messages for debugging
-            page.on("console", lambda msg: None)  # Suppress console
             
-            # Use networkidle for better page load detection, with fallback
-            try:
-                await page.goto(TARGET_URL, wait_until="networkidle", timeout=60000)
-            except Exception as nav_error:
-                # Fallback to domcontentloaded if networkidle times out
-                debug_info.append(f"Networkidle timeout, retrying with domcontentloaded: {str(nav_error)[:50]}")
-                await page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=60000)
+            # Verify proxy is working by checking IP
+            if proxy_config:
+                await verify_proxy_ip(page, debug_info)
             
+            # Navigate to target URL
+            await page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=60000)
             debug_info.append("Page loaded")
-            # Wait longer for page to stabilize and JavaScript to execute
-            await asyncio.sleep(4)
             
-            # Check if we hit a Cloudflare challenge page early
+            # Wait for page to stabilize (2 seconds as requested)
+            await asyncio.sleep(2)
+            
+            # EARLY Cloudflare detection - fail fast if blocked
+            page_title = await page.title()
             page_text_early = await page.inner_text('body')
-            if any(x in page_text_early.lower() for x in ['checking your browser', 'just a moment', 'enable javascript', 'ray id', 'cloudflare']):
-                debug_info.append("Detected Cloudflare challenge, waiting longer...")
-                await asyncio.sleep(8)  # Wait for challenge to complete
+            
+            if is_cloudflare_challenge(page_title, page_text_early):
+                debug_info.append(f"Cloudflare challenge detected (title: {page_title})")
+                await browser.close()
+                return {
+                    "success": False,
+                    "error": "Blocked by Cloudflare",
+                    "cloudflare_blocked": True,
+                    "registration": registration,
+                    "debug": debug_info,
+                    "pageTitle": page_title,
+                }
+            
             # Handle cookies
             for selector in ['button:has-text("Accept all")', 'button:has-text("Accept")', '#onetrust-accept-btn-handler']:
                 try:
@@ -329,30 +293,44 @@ async def lookup_insurance_group(registration: str):
                 '[data-cy="vrm-input"] input',
             ]
             
-            # Try multiple times with increasing waits
-            for attempt in range(3):
-                for selector in input_selectors:
-                    try:
-                        element = page.locator(selector).first
-                        if await element.is_visible(timeout=1500):
-                            input_element = element
-                            debug_info.append(f"Found input with selector: {selector}")
-                            break
-                    except:
-                        continue
-                if input_element:
-                    break
-                # Wait and retry if not found
-                debug_info.append(f"Input not found on attempt {attempt + 1}, waiting...")
-                await asyncio.sleep(2)
+            # Try to find input (single attempt, no retries - fail fast)
+            for selector in input_selectors:
+                try:
+                    element = page.locator(selector).first
+                    if await element.is_visible(timeout=2000):
+                        input_element = element
+                        debug_info.append(f"Found input with selector: {selector}")
+                        break
+                except:
+                    continue
             
             if not input_element:
                 page_text = await page.inner_text('body')
                 page_url = page.url
+                page_title = await page.title()
                 debug_info.append(f"Final URL: {page_url}")
-                debug_info.append(f"Page title: {await page.title()}")
+                debug_info.append(f"Page title: {page_title}")
                 await browser.close()
-                return {"success": False, "error": "Could not find registration input field", "registration": registration, "debug": debug_info, "pageTextSample": page_text[:3000], "finalUrl": page_url}
+                
+                # Check if this is actually a Cloudflare block we missed
+                if is_cloudflare_challenge(page_title, page_text):
+                    return {
+                        "success": False,
+                        "error": "Blocked by Cloudflare",
+                        "cloudflare_blocked": True,
+                        "registration": registration,
+                        "debug": debug_info,
+                        "pageTitle": page_title,
+                    }
+                
+                return {
+                    "success": False,
+                    "error": "Could not find registration input field",
+                    "registration": registration,
+                    "debug": debug_info,
+                    "pageTextSample": page_text[:3000],
+                    "finalUrl": page_url,
+                }
             
             await short_delay(50, 150)
             await input_element.click()
@@ -386,9 +364,19 @@ async def lookup_insurance_group(registration: str):
                 await asyncio.sleep(poll_interval)
                 waited += poll_interval
                 page_text = await page.inner_text('body')
-                if "unusual requests" in page_text.lower():
+                
+                # Check for Cloudflare block during results wait
+                page_title = await page.title()
+                if is_cloudflare_challenge(page_title, page_text):
                     await browser.close()
-                    return {"success": False, "error": "Blocked by Cloudflare", "registration": registration, "debug": debug_info}
+                    return {
+                        "success": False,
+                        "error": "Blocked by Cloudflare",
+                        "cloudflare_blocked": True,
+                        "registration": registration,
+                        "debug": debug_info,
+                    }
+                
                 if registration.upper() in page_text.upper() and "retrieving data" not in page_text.lower() and "your car insurance group" in page_text.lower():
                     results_loaded = True
                     debug_info.append(f"Results loaded in {waited:.1f}s")
@@ -427,28 +415,19 @@ async def main(registration: str):
         if result.get("success"):
             print(json.dumps(result))
             return
-        # Check if it's a Cloudflare block or retryable error - retry with new IP
-        page_sample = result.get("pageTextSample", "").lower()
-        error_msg = result.get("error", "").lower()
-        is_cloudflare_block = (
-            "cloudflare" in page_sample or
-            "cloudflare" in error_msg or
-            "unusual requests" in page_sample or
-            "unblock challenges" in page_sample or
-            "ray id" in page_sample or
-            "checking your browser" in page_sample or
-            "just a moment" in page_sample
-        )
-        # Also retry if input field not found (could be blocked page)
-        is_input_not_found = "could not find registration input" in error_msg
         
-        if (is_cloudflare_block or is_input_not_found) and attempt < max_retries - 1:
-            # Wait a bit before retrying with new proxy IP
-            result["debug"] = result.get("debug", []) + [f"Retrying (attempt {attempt + 2}/{max_retries})..."]
+        # Check if it's a Cloudflare block - retry with new IP
+        is_cloudflare_block = result.get("cloudflare_blocked", False)
+        
+        if is_cloudflare_block and attempt < max_retries - 1:
+            # Add retry info to debug
+            result["debug"] = result.get("debug", []) + [f"Cloudflare blocked, retrying (attempt {attempt + 2}/{max_retries})..."]
             await asyncio.sleep(2)
             continue
+        
         # For other errors or last attempt, don't retry
         break
+    
     print(json.dumps(result))
 
 
