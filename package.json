@@ -1,21 +1,36 @@
 {
   "name": "insurance-scraper",
-  "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "version": "2.0.0",
+  "description": "Insurance group lookup scraper using Puppeteer",
+  "main": "server.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "jest --testTimeout=120000",
+    "test:verbose": "jest --testTimeout=120000 --verbose",
+    "crawler": "node crawler.js"
   },
-  "keywords": [],
+  "keywords": [
+    "insurance",
+    "scraper",
+    "puppeteer"
+  ],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
     "cors": "^2.8.5",
-    "express": "^5.2.1"
+    "dotenv": "^16.3.1",
+    "express": "^5.2.1",
+    "puppeteer": "^22.0.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.11"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

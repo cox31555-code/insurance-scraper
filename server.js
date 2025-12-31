@@ -1,7 +1,12 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
-const { spawn } = require("child_process");
+
+// Load environment variables from .env file
+require('dotenv').config();
+
+// Import the Node.js crawler module
+const { main: lookupInsuranceGroup } = require('./crawler');
 
 const app = express();
 app.use(cors());
@@ -12,8 +17,8 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.get("/health", (req, res) => res.json({ ok: true }));
 
-// New endpoint for insurance group lookup
-app.post("/lookup", (req, res) => {
+// Endpoint for insurance group lookup using Node.js crawler
+app.post("/lookup", async (req, res) => {
   const { registration } = req.body;
 
   if (!registration || typeof registration !== "string") {
@@ -33,83 +38,17 @@ app.post("/lookup", (req, res) => {
     });
   }
 
-  const pythonBin = process.env.PYTHON_BIN || "python3";
-  // Pass environment variables to Python process
-  const env = {
-    ...process.env,
-    PROXY_HOST: process.env.PROXY_HOST || "",
-    PROXY_PORT: process.env.PROXY_PORT || "",
-    PROXY_USER: process.env.PROXY_USER || "",
-    PROXY_PASS: process.env.PROXY_PASS || ""
-  };
-
-  const py = spawn(pythonBin, ["crawler.py", cleanReg], { env });
-
-  let out = "";
-  let err = "";
-
-  py.stdout.on("data", (d) => (out += d.toString()));
-  py.stderr.on("data", (d) => (err += d.toString()));
-
-  py.on("close", (code) => {
-    if (code !== 0) {
-      return res.status(500).json({
-        success: false,
-        error: "Crawler failed",
-        code,
-        details: err || out,
-      });
-    }
-
-    try {
-      return res.json(JSON.parse(out));
-    } catch {
-      return res.status(500).json({
-        success: false,
-        error: "Crawler did not return valid JSON",
-        raw: out,
-        details: err,
-      });
-    }
-  });
-});
-
-// Keep the original crawl endpoint for backward compatibility
-app.post("/crawl", (req, res) => {
-  const { url } = req.body;
-
-  if (!url || typeof url !== "string") {
-    return res.status(400).json({ error: "Missing 'url' string in body" });
+  try {
+    // Call the Node.js crawler directly
+    const result = await lookupInsuranceGroup(cleanReg);
+    return res.json(result);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      error: "Crawler failed",
+      details: error.message || String(error),
+    });
   }
-
-  const pythonBin = process.env.PYTHON_BIN || "python3";
-  const py = spawn(pythonBin, ["crawler.py", url], { env: process.env });
-
-  let out = "";
-  let err = "";
-
-  py.stdout.on("data", (d) => (out += d.toString()));
-  py.stderr.on("data", (d) => (err += d.toString()));
-
-  py.on("close", (code) => {
-    if (code !== 0) {
-      return res.status(500).json({
-        error: "Crawler failed",
-        code,
-        details: err || out,
-      });
-    }
-
-    try {
-      return res.json(JSON.parse(out));
-    } catch {
-      return res.status(500).json({
-        error: "Crawler did not return valid JSON",
-        raw: out,
-        details: err,
-      });
-    }
-  });
 });
 
 // Serve the frontend for the root route
