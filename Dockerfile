@@ -77,7 +77,6 @@ RUN apt-get update && apt-get install -y \
     fonts-dejavu-core \
     fonts-dejavu-extra \
     fonts-droid-fallback \
-    fonts-ubuntu \
     fonts-roboto \
     fonts-opensymbol \
     fonts-symbola \
