@@ -283,11 +283,23 @@ async def lookup_insurance_group(registration: str):
             # Listen for console messages for debugging
             page.on("console", lambda msg: None)  # Suppress console
             
-            await page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=60000)
-            debug_info.append("Page loaded")
-            # Wait for page to stabilize
-            await asyncio.sleep(2)
+            # Use networkidle for better page load detection, with fallback
+            try:
+                await page.goto(TARGET_URL, wait_until="networkidle", timeout=60000)
+            except Exception as nav_error:
+                # Fallback to domcontentloaded if networkidle times out
+                debug_info.append(f"Networkidle timeout, retrying with domcontentloaded: {str(nav_error)[:50]}")
+                await page.goto(TARGET_URL, wait_until="domcontentloaded", timeout=60000)
             
+            debug_info.append("Page loaded")
+            # Wait longer for page to stabilize and JavaScript to execute
+            await asyncio.sleep(4)
+            
+            # Check if we hit a Cloudflare challenge page early
+            page_text_early = await page.inner_text('body')
+            if any(x in page_text_early.lower() for x in ['checking your browser', 'just a moment', 'enable javascript', 'ray id', 'cloudflare']):
+                debug_info.append("Detected Cloudflare challenge, waiting longer...")
+                await asyncio.sleep(8)  # Wait for challenge to complete
             # Handle cookies
             for selector in ['button:has-text("Accept all")', 'button:has-text("Accept")', '#onetrust-accept-btn-handler']:
                 try:
@@ -300,21 +312,47 @@ async def lookup_insurance_group(registration: str):
                 except:
                     continue
             
-            # Find input
+            # Find input with extended timeout and more selectors
             input_element = None
-            for selector in ['input[data-testid="vrm-input"]', 'input[name="vrm"]', 'input[name="registration"]', 'input[id="vrm"]', 'input[placeholder*="registration" i]', 'input[type="text"][maxlength]']:
-                try:
-                    element = page.locator(selector).first
-                    if await element.is_visible(timeout=800):
-                        input_element = element
-                        break
-                except:
-                    continue
+            input_selectors = [
+                'input[data-testid="vrm-input"]',
+                'input[name="vrm"]',
+                'input[name="registration"]',
+                'input[id="vrm"]',
+                'input[placeholder*="registration" i]',
+                'input[placeholder*="reg" i]',
+                'input[placeholder*="number plate" i]',
+                'input[aria-label*="registration" i]',
+                'input[type="text"][maxlength]',
+                'input.vrm-input',
+                '#registration-input',
+                '[data-cy="vrm-input"] input',
+            ]
+            
+            # Try multiple times with increasing waits
+            for attempt in range(3):
+                for selector in input_selectors:
+                    try:
+                        element = page.locator(selector).first
+                        if await element.is_visible(timeout=1500):
+                            input_element = element
+                            debug_info.append(f"Found input with selector: {selector}")
+                            break
+                    except:
+                        continue
+                if input_element:
+                    break
+                # Wait and retry if not found
+                debug_info.append(f"Input not found on attempt {attempt + 1}, waiting...")
+                await asyncio.sleep(2)
             
             if not input_element:
                 page_text = await page.inner_text('body')
+                page_url = page.url
+                debug_info.append(f"Final URL: {page_url}")
+                debug_info.append(f"Page title: {await page.title()}")
                 await browser.close()
-                return {"success": False, "error": "Could not find registration input field", "registration": registration, "debug": debug_info, "pageTextSample": page_text[:2000]}
+                return {"success": False, "error": "Could not find registration input field", "registration": registration, "debug": debug_info, "pageTextSample": page_text[:3000], "finalUrl": page_url}
             
             await short_delay(50, 150)
             await input_element.click()
@@ -389,7 +427,7 @@ async def main(registration: str):
         if result.get("success"):
             print(json.dumps(result))
             return
-        # Check if it's a Cloudflare block - retry with new IP
+        # Check if it's a Cloudflare block or retryable error - retry with new IP
         page_sample = result.get("pageTextSample", "").lower()
         error_msg = result.get("error", "").lower()
         is_cloudflare_block = (
@@ -397,11 +435,17 @@ async def main(registration: str):
             "cloudflare" in error_msg or
             "unusual requests" in page_sample or
             "unblock challenges" in page_sample or
-            "ray id" in page_sample
+            "ray id" in page_sample or
+            "checking your browser" in page_sample or
+            "just a moment" in page_sample
         )
-        if is_cloudflare_block and attempt < max_retries - 1:
+        # Also retry if input field not found (could be blocked page)
+        is_input_not_found = "could not find registration input" in error_msg
+        
+        if (is_cloudflare_block or is_input_not_found) and attempt < max_retries - 1:
             # Wait a bit before retrying with new proxy IP
-            await asyncio.sleep(1)
+            result["debug"] = result.get("debug", []) + [f"Retrying (attempt {attempt + 2}/{max_retries})..."]
+            await asyncio.sleep(2)
             continue
         # For other errors or last attempt, don't retry
         break

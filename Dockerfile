@@ -192,5 +192,22 @@ ENV XDG_CACHE_HOME=/root/.cache
 HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
     CMD wget --no-verbose --tries=1 --spider http://localhost:3001/health || exit 1
 
-# Start the server
-CMD ["node", "server.js"]
+# Create startup script that starts Xvfb and then the server
+RUN printf '#!/bin/bash\n\
+# Start Xvfb in the background\n\
+Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset &\n\
+XVFB_PID=$!\n\
+sleep 2\n\
+# Verify Xvfb is running\n\
+if ! kill -0 $XVFB_PID 2>/dev/null; then\n\
+    echo "Warning: Xvfb failed to start, continuing anyway..."\n\
+fi\n\
+# Start D-Bus\n\
+mkdir -p /run/dbus\n\
+dbus-daemon --system --fork 2>/dev/null || true\n\
+# Start the Node.js server\n\
+exec node server.js\n\
+' > /app/start.sh && chmod +x /app/start.sh
+
+# Start the server with Xvfb
+CMD ["/bin/bash", "/app/start.sh"]
