@@ -33,7 +33,7 @@ app.post("/lookup", (req, res) => {
     });
   }
 
-  const pythonBin = process.env.PYTHON_BIN || "python";
+  const pythonBin = process.env.PYTHON_BIN || "python3";
   // Pass environment variables to Python process
   const env = {
     ...process.env,
@@ -82,7 +82,7 @@ app.post("/crawl", (req, res) => {
     return res.status(400).json({ error: "Missing 'url' string in body" });
   }
 
-  const pythonBin = process.env.PYTHON_BIN || "python";
+  const pythonBin = process.env.PYTHON_BIN || "python3";
   const py = spawn(pythonBin, ["crawler.py", url], { env: process.env });
 
   let out = "";
