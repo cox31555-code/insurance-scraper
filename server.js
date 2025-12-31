@@ -10,6 +10,9 @@ app.use(express.json({ limit: "1mb" }));
 // Serve static files from public directory
 app.use(express.static(path.join(__dirname, "public")));
 
+// Serve node_modules for vanilla-terminal
+app.use('/node_modules', express.static(path.join(__dirname, 'node_modules')));
+
 app.get("/health", (req, res) => res.json({ ok: true }));
 
 // New endpoint for insurance group lookup
