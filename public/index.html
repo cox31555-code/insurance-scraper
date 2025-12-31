@@ -3,17 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Insurance Group Checker</title>
+    <title>Insurance Group Terminal</title>
     <style>
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
             min-height: 100vh;
             display: flex;
             align-items: center;
@@ -21,360 +22,323 @@
             padding: 20px;
         }
 
-        .container {
-            background: white;
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            padding: 40px;
+        .terminal-wrapper {
             width: 100%;
-            max-width: 500px;
-        }
-
-        h1 {
-            color: #333;
-            font-size: 24px;
-            margin-bottom: 8px;
-            text-align: center;
-        }
-
-        .subtitle {
-            color: #666;
-            font-size: 14px;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-
-        .input-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            color: #555;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
-        }
-
-        input[type="text"] {
-            width: 100%;
-            padding: 14px 16px;
-            font-size: 18px;
-            border: 2px solid #e0e0e0;
+            max-width: 900px;
+            background: #1a1a1a;
             border-radius: 8px;
-            outline: none;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            text-transform: uppercase;
-            letter-spacing: 2px;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.2);
+            overflow: hidden;
         }
 
-        input[type="text"]:focus {
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.2);
-        }
-
-        input[type="text"]::placeholder {
-            text-transform: none;
-            letter-spacing: normal;
-            color: #aaa;
-        }
-
-        button {
-            width: 100%;
-            padding: 14px 24px;
-            font-size: 16px;
-            font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+        .terminal-header {
+            background: #2a2a2a;
+            padding: 10px 15px;
             display: flex;
             align-items: center;
-            justify-content: center;
-            gap: 10px;
+            gap: 8px;
+            border-bottom: 1px solid #00ff00;
         }
 
-        button:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-        }
-
-        button:active:not(:disabled) {
-            transform: translateY(0);
-        }
-
-        button:disabled {
-            opacity: 0.7;
-            cursor: not-allowed;
-        }
-
-        .spinner {
-            width: 20px;
-            height: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            border-top-color: white;
+        .terminal-button {
+            width: 12px;
+            height: 12px;
             border-radius: 50%;
-            animation: spin 0.8s linear infinite;
         }
 
-        @keyframes spin {
-            to { transform: rotate(360deg); }
+        .terminal-button.close {
+            background: #ff5f56;
         }
 
-        .result {
-            margin-top: 30px;
-            padding: 20px;
-            border-radius: 8px;
-            display: none;
+        .terminal-button.minimize {
+            background: #ffbd2e;
         }
 
-        .result.success {
-            display: block;
-            background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
-            border: 1px solid #28a745;
+        .terminal-button.maximize {
+            background: #27c93f;
         }
 
-        .result.error {
-            display: block;
-            background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
-            border: 1px solid #dc3545;
-        }
-
-        .result-title {
-            font-size: 14px;
-            color: #666;
-            margin-bottom: 8px;
-        }
-
-        .result-group {
-            font-size: 36px;
-            font-weight: 700;
-            color: #333;
-            margin-bottom: 8px;
-        }
-
-        .result-reg {
-            font-size: 14px;
-            color: #666;
-            font-family: monospace;
-            background: rgba(0, 0, 0, 0.1);
-            padding: 4px 8px;
-            border-radius: 4px;
-            display: inline-block;
-        }
-
-        .result.error .result-title {
-            color: #721c24;
-        }
-
-        .result.error .error-message {
-            color: #721c24;
-            font-size: 14px;
-        }
-
-        .json-output {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .json-output h3 {
-            font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .json-output pre {
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 12px;
-            color: #333;
-            white-space: pre-wrap;
-            word-break: break-all;
-            margin: 0;
-        }
-
-        .progress-bar {
-            width: 100%;
-            height: 4px;
-            background: #e0e0e0;
-            border-radius: 2px;
-            margin-top: 15px;
-            overflow: hidden;
-            display: none;
-        }
-
-        .progress-bar.active {
-            display: block;
-        }
-
-        .progress-bar-inner {
-            height: 100%;
-            background: linear-gradient(90deg, #667eea, #764ba2, #667eea);
-            background-size: 200% 100%;
-            animation: progress 1.5s ease-in-out infinite;
-            width: 100%;
-        }
-
-        @keyframes progress {
-            0% { background-position: 200% 0; }
-            100% { background-position: -200% 0; }
-        }
-
-        .status-text {
+        .terminal-title {
+            flex: 1;
             text-align: center;
-            font-size: 13px;
-            color: #666;
-            margin-top: 10px;
-            display: none;
+            color: #00ff00;
+            font-size: 12px;
+            font-weight: bold;
         }
 
-        .status-text.active {
-            display: block;
+        #terminal {
+            min-height: 500px;
+            padding: 20px;
+        }
+
+        .vt-wrapper {
+            font-family: 'Courier New', monospace !important;
+        }
+
+        .vt-line {
+            line-height: 1.5;
+        }
+
+        .ascii-art {
+            color: #00ff00;
+            font-size: 10px;
+            line-height: 1.2;
+        }
+
+        @media (max-width: 768px) {
+            .terminal-wrapper {
+                max-width: 100%;
+            }
+            
+            #terminal {
+                min-height: 400px;
+                padding: 15px;
+            }
+            
+            .ascii-art {
+                font-size: 8px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚗 Car Insurance Group Checker</h1>
-        <p class="subtitle">Enter your vehicle registration to find its insurance group</p>
-        
-        <div class="input-group">
-            <label for="registration">Registration Number</label>
-            <input 
-                type="text" 
-                id="registration" 
-                placeholder="e.g. WJ60CHG"
-                maxlength="8"
-                autocomplete="off"
-            >
+    <div class="terminal-wrapper">
+        <div class="terminal-header">
+            <div class="terminal-button close"></div>
+            <div class="terminal-button minimize"></div>
+            <div class="terminal-button maximize"></div>
+            <div class="terminal-title">insurance-terminal v1.0.0</div>
         </div>
-        
-        <button id="extractBtn" onclick="lookupInsuranceGroup()"><span id="btnText">Extract Insurance Group</span>
-            <div class="spinner" id="spinner" style="display: none;"></div>
-        </button>
-        
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-bar-inner"></div>
-        </div>
-        
-        <p class="status-text" id="statusText">Searching for vehicle information...</p>
-        
-        <div class="result" id="result">
-            <div class="result-title">Your car insurance group</div>
-            <div class="result-group" id="resultGroup"></div>
-            <div class="result-reg" id="resultReg"></div>
-        </div>
-        
-        <div class="json-output" id="jsonOutput" style="display: none;">
-            <h3>JSON Response</h3>
-            <pre id="jsonContent"></pre>
-        </div>
+        <div id="terminal"></div>
     </div>
 
-    <script>
-        const registrationInput = document.getElementById('registration');
-        const extractBtn = document.getElementById('extractBtn');
-        const btnText = document.getElementById('btnText');
-        const spinner = document.getElementById('spinner');
-        const progressBar = document.getElementById('progressBar');
-        const statusText = document.getElementById('statusText');
-        const result = document.getElementById('result');
-        const resultGroup = document.getElementById('resultGroup');
-        const resultReg = document.getElementById('resultReg');
-        const jsonOutput = document.getElementById('jsonOutput');
-        const jsonContent = document.getElementById('jsonContent');
+    <script type="module">
+        import Terminal from '/node_modules/vanilla-terminal/index.js';
 
-        // Allow Enter key to submit
-        registrationInput.addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') {
-                lookupInsuranceGroup();
-            }
-        });
+        const asciiCar = `
+    ______
+   /|_||_\\'._
+  (   _    _ _\\
+ ='-(_)--(_)-'
+        `;
 
-        // Auto-format input to uppercase
-        registrationInput.addEventListener('input', (e) => {
-            e.target.value = e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
-        });
+        const welcomeMessage = `
+${asciiCar}
+╔═══════════════════════════════════════════════════════════╗
+║     CAR INSURANCE GROUP CHECKER TERMINAL v1.0.0          ║
+║                                                           ║
+║  Type 'help' for available commands                      ║
+╚═══════════════════════════════════════════════════════════╝
 
-        async function lookupInsuranceGroup() {
-            const registration = registrationInput.value.trim();
-            
-            if (!registration) {
-                showError('Please enter a registration number');
-                return;
-            }
+Welcome to the Insurance Group Terminal!
+`;
 
-            if (registration.length < 2 || registration.length > 8) {
-                showError('Invalid registration number format');
-                return;
-            }
+        let currentRegistration = '';
 
-            // Show loading state
-            setLoading(true);
-            hideResult();
+        const terminal = new Terminal({
+            welcome: welcomeMessage,
+            prompt: 'insurance-terminal$',
+            separator: ' ',
+            commands: {
+                help: () => {
+                    return `
+Available Commands:
+─────────────────────────────────────────────────────────
 
-            try {
-                const response = await fetch('/lookup', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ registration })
-                });
+  check <REG>      Check insurance group for registration
+                   Example: check WJ60CHG
 
-                const data = await response.json();
-                
-                // Show JSON response
-                jsonOutput.style.display = 'block';
-                jsonContent.textContent = JSON.stringify(data, null, 2);
+  set <REG>        Set current registration number
+                   Example: set AB12CDE
 
-                if (data.success) {
-                    showSuccess(data);
-                } else {
-                    showError(data.error || 'Failed to lookup insurance group');
+  show             Display current registration
+
+  lookup           Lookup insurance group for current registration
+
+  clear            Clear the terminal screen
+
+  about            Show information about this terminal
+
+  help             Show this help message
+
+─────────────────────────────────────────────────────────
+Current Registration: ${currentRegistration || 'None set'}
+`;
+                },
+
+                check: async (args) => {
+                    const reg = args.join('').toUpperCase().replace(/\s+/g, '');
+                    
+                    if (!reg) {
+                        return 'Error: Please provide a registration number\nUsage: check <registration>';
+                    }
+
+                    if (reg.length < 2 || reg.length > 8) {
+                        return 'Error: Invalid registration format (2-8 characters required)';
+                    }
+
+                    terminal.output('Connecting to insurance database...');
+                    terminal.output(`Searching for vehicle: ${reg}`);
+                    terminal.output('Processing...\n');
+
+                    try {
+                        const response = await fetch('/lookup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ registration: reg })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            currentRegistration = reg;
+                            return `
+╔═══════════════════════════════════════════════════════════╗
+║                    LOOKUP SUCCESSFUL                      ║
+╚═══════════════════════════════════════════════════════════╝
+
+Registration:      ${data.registration}
+Insurance Group:   ${data.insuranceGroup}/${data.maxGroup}
+Display:           ${data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`}
+
+Raw Data:
+─────────────────────────────────────────────────────────
+${JSON.stringify(data, null, 2)}
+─────────────────────────────────────────────────────────
+`;
+                        } else {
+                            return `
+╔═══════════════════════════════════════════════════════════╗
+║                      LOOKUP FAILED                        ║
+╚═══════════════════════════════════════════════════════════╝
+
+Error: ${data.error || 'Unknown error occurred'}
+
+Response:
+${JSON.stringify(data, null, 2)}
+`;
+                        }
+                    } catch (error) {
+                        return `
+╔═══════════════════════════════════════════════════════════╗
+║                    CONNECTION ERROR                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+Error: ${error.message}
+Please check your network connection and try again.
+`;
+                    }
+                },
+
+                set: (args) => {
+                    const reg = args.join('').toUpperCase().replace(/\s+/g, '');
+                    
+                    if (!reg) {
+                        return 'Error: Please provide a registration number\nUsage: set <registration>';
+                    }
+
+                    if (reg.length < 2 || reg.length > 8) {
+                        return 'Error: Invalid registration format (2-8 characters required)';
+                    }
+
+                    currentRegistration = reg;
+                    return `Registration set to: ${reg}\nUse 'lookup' to check insurance group`;
+                },
+
+                show: () => {
+                    if (!currentRegistration) {
+                        return 'No registration number set\nUse: set <registration>';
+                    }
+                    return `Current Registration: ${currentRegistration}`;
+                },
+
+                lookup: async () => {
+                    if (!currentRegistration) {
+                        return 'Error: No registration set\nUse: set <registration> or check <registration>';
+                    }
+
+                    terminal.output('Connecting to insurance database...');
+                    terminal.output(`Searching for vehicle: ${currentRegistration}`);
+                    terminal.output('Processing...\n');
+
+                    try {
+                        const response = await fetch('/lookup', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ registration: currentRegistration })
+                        });
+
+                        const data = await response.json();
+
+                        if (data.success) {
+                            return `
+╔═══════════════════════════════════════════════════════════╗
+║                    LOOKUP SUCCESSFUL                      ║
+╚═══════════════════════════════════════════════════════════╝
+
+Registration:      ${data.registration}
+Insurance Group:   ${data.insuranceGroup}/${data.maxGroup}
+Display:           ${data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`}
+
+Raw Data:
+─────────────────────────────────────────────────────────
+${JSON.stringify(data, null, 2)}
+─────────────────────────────────────────────────────────
+`;
+                        } else {
+                            return `
+╔═══════════════════════════════════════════════════════════╗
+║                      LOOKUP FAILED                        ║
+╚═══════════════════════════════════════════════════════════╝
+
+Error: ${data.error || 'Unknown error occurred'}
+
+Response:
+${JSON.stringify(data, null, 2)}
+`;
+                        }
+                    } catch (error) {
+                        return `
+╔═══════════════════════════════════════════════════════════╗
+║                    CONNECTION ERROR                       ║
+╚═══════════════════════════════════════════════════════════╝
+
+Error: ${error.message}
+Please check your network connection and try again.
+`;
+                    }
+                },
+
+                clear: () => {
+                    terminal.clear();
+                    return welcomeMessage;
+                },
+
+                about: () => {
+                    return `
+╔═══════════════════════════════════════════════════════════╗
+║          CAR INSURANCE GROUP CHECKER TERMINAL            ║
+╚═══════════════════════════════════════════════════════════╝
+
+Version:           1.0.0
+Terminal:          vanilla-terminal
+Backend:           Express.js + Python Crawler
+Database:          Live Insurance Data
+
+Description:
+This terminal application allows you to check car insurance
+groups by entering vehicle registration numbers. The system
+queries live data and returns insurance group information.
+
+Commands:          Type 'help' for full command list
+Repository:        insurance-scraper
+License:           ISC
+
+${asciiCar}
+`;
                 }
-            } catch (error) {
-                showError('Network error: ' + error.message);
-                jsonOutput.style.display = 'block';
-                jsonContent.textContent = JSON.stringify({ error: error.message }, null, 2);
-            } finally {
-                setLoading(false);
             }
-        }
-
-        function setLoading(loading) {
-            extractBtn.disabled = loading;
-            btnText.textContent = loading ? 'Extracting...' : 'Extract Insurance Group';
-            spinner.style.display = loading ? 'block' : 'none';
-            progressBar.classList.toggle('active', loading);statusText.classList.toggle('active', loading);
-        }
-
-        function hideResult() {
-            result.className = 'result';
-            result.style.display = 'none';
-        }
-
-        function showSuccess(data) {
-            result.className = 'result success';
-            result.style.display = 'block';
-            resultGroup.textContent = data.displayText || `Group ${data.insuranceGroup}/${data.maxGroup}`;
-            resultReg.textContent = data.registration;
-        }
-
-        function showError(message) {
-            result.className = 'result error';
-            result.style.display = 'block';
-            result.innerHTML = `
-                <div class="result-title">Error</div>
-                <div class="error-message">${message}</div>
-            `;
-        }
+        });
     </script>
 </body>
 </html>
